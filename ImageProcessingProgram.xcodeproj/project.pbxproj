@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		AE486AEC28FC24D6003651E1 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AE486AEB28FC24D6003651E1 /* main.cpp */; };
+		AE486AF428FC24DE003651E1 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE486AF328FC24DE003651E1 /* GLUT.framework */; };
+		AE486AF628FC24E9003651E1 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE486AF528FC24E9003651E1 /* OpenGL.framework */; };
+		AE486AFD28FC2544003651E1 /* sgi.c in Sources */ = {isa = PBXBuildFile; fileRef = AE486AF828FC2544003651E1 /* sgi.c */; };
+		AE486AFE28FC2544003651E1 /* bmp.c in Sources */ = {isa = PBXBuildFile; fileRef = AE486AFB28FC2544003651E1 /* bmp.c */; };
+		AE486AFF28FC2544003651E1 /* imgp.c in Sources */ = {isa = PBXBuildFile; fileRef = AE486AFC28FC2544003651E1 /* imgp.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +30,15 @@
 /* Begin PBXFileReference section */
 		AE486AE828FC24D6003651E1 /* ImageProcessingProgram */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ImageProcessingProgram; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE486AEB28FC24D6003651E1 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		AE486AF328FC24DE003651E1 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		AE486AF528FC24E9003651E1 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		AE486AF728FC2544003651E1 /* train.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = train.bmp; sourceTree = "<group>"; };
+		AE486AF828FC2544003651E1 /* sgi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sgi.c; sourceTree = "<group>"; };
+		AE486AF928FC2544003651E1 /* sgi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sgi.h; sourceTree = "<group>"; };
+		AE486AFA28FC2544003651E1 /* test.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = test.bmp; sourceTree = "<group>"; };
+		AE486AFB28FC2544003651E1 /* bmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bmp.c; sourceTree = "<group>"; };
+		AE486AFC28FC2544003651E1 /* imgp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = imgp.c; sourceTree = "<group>"; };
+		AE486B0028FC254B003651E1 /* test2.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = test2.bmp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +46,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE486AF428FC24DE003651E1 /* GLUT.framework in Frameworks */,
+				AE486AF628FC24E9003651E1 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +59,7 @@
 			children = (
 				AE486AEA28FC24D6003651E1 /* ImageProcessingProgram */,
 				AE486AE928FC24D6003651E1 /* Products */,
+				AE486AF228FC24DE003651E1 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -57,9 +74,25 @@
 		AE486AEA28FC24D6003651E1 /* ImageProcessingProgram */ = {
 			isa = PBXGroup;
 			children = (
+				AE486AFB28FC2544003651E1 /* bmp.c */,
+				AE486AFC28FC2544003651E1 /* imgp.c */,
+				AE486AF828FC2544003651E1 /* sgi.c */,
+				AE486AF928FC2544003651E1 /* sgi.h */,
+				AE486AF728FC2544003651E1 /* train.bmp */,
+				AE486AFA28FC2544003651E1 /* test.bmp */,
+				AE486B0028FC254B003651E1 /* test2.bmp */,
 				AE486AEB28FC24D6003651E1 /* main.cpp */,
 			);
 			path = ImageProcessingProgram;
+			sourceTree = "<group>";
+		};
+		AE486AF228FC24DE003651E1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AE486AF528FC24E9003651E1 /* OpenGL.framework */,
+				AE486AF328FC24DE003651E1 /* GLUT.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,7 +152,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE486AFF28FC2544003651E1 /* imgp.c in Sources */,
+				AE486AFE28FC2544003651E1 /* bmp.c in Sources */,
 				AE486AEC28FC24D6003651E1 /* main.cpp in Sources */,
+				AE486AFD28FC2544003651E1 /* sgi.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
