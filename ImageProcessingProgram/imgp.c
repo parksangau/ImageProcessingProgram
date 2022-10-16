@@ -432,7 +432,7 @@ int main (int argc, char** argv)   {
     
     mainMenu = glutCreateMenu(mainSelect);
     glutAddSubMenu("1. Open File", fileMenu);
-    glutAddSubMenu("2.Display", displayMenu);
+    glutAddSubMenu("2. Choose Menu", displayMenu);
 
     glutAddMenuEntry("3. Quit",666);
     glutSetMenu(mainMenu);
