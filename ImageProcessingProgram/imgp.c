@@ -20,6 +20,7 @@ void BrightnessImage();
 void ContrastImage();
 void EdgeDetection();
 void SaturationImage();
+void Embossing();
 
 
 void init (void)  {
@@ -122,6 +123,11 @@ void displaySelect(int value)
             SaturationImage();
             display();
             break;
+            
+        case 16:
+            Embossing();
+            display();
+            break;
     }
 }
 
@@ -166,8 +172,8 @@ void BrightnessImage() {
     float r, g, b;
     float ro, go, bo;
     float scale = 1.5;
-    // 밝기 어둡게
-    // float scale = 0.8;
+    
+    // float scale = 0.8;   // 밝기 어둡게 하려면 1.0 이하
     for (j = 0; j < height; j++)  {
         for (i = 0; i < width * 3; i = i + 3) {
             r = image[j * width * 3 + i + 0];
@@ -340,12 +346,82 @@ void EdgeDetection() {
 
 
 
-// void Embossing() {
+void Embossing() {
+    
+    unsigned char *timage = (unsigned char *)malloc(width*height*3);
+    int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
+    int filter_sum=1;
+    
     //1. 그레이 필터로 바꾸기
+    float lumi;
+    for (j = 0; j < height; j++)  {
+        for (i = 0; i < width * 3; i = i + 3) {
+            r = image[j * width * 3 + i + 0];
+            g = image[j * width * 3 + i + 1];
+            b = image[j * width * 3 + i + 2];
+            
+            // L = 0.30R + 0.59G + 0.11B or 0.2125R + 0.7154G + 0.0721B
+            // lumi = 0.2125 * r + 0.7154 * g + 0.0721 * b;
+            lumi = 0.30 * r + 0.59 * g + 0.11 * b;
+            
+            image[j * width * 3 + i + 0] = lumi + 128;
+            image[j * width * 3 + i + 1] = lumi + 128;
+            image[j * width * 3 + i + 2] = lumi + 128;
+       }
+   }
+    
+    
     //2. filtering
-    //3. 128을 더하기 (or 0.5)
+    int filter[3][3]={{2,0,0},{0,-1,0},{0,0,-1}};
+    
+    
+    for (j=1;j<height-1; j++)  {
+        for (i=1;i<(width-1); i++) {
+            sumr=0; sumb=0; sumg=0;
+            
+            for(k=0;k<3;k++){
+                for(l=0;l<3;l++){
+                    
+                    pos= (j+l-1)*width*3+(i+k-1)*3;
+                    
+                    r=image[pos+0];
+                    g=image[pos+1];
+                    b=image[pos+2];
+                    
+                    sumr += r*filter[k][l];
+                    sumg += g*filter[k][l];
+                    sumb += b*filter[k][l];
+                    
+                }
+            }
+            
+            sumr/=filter_sum;
+            sumg/=filter_sum;
+            sumb/=filter_sum;
+            
+            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
+            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
+            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
+            
+            
+            
+            timage[j*width*3+i*3+0]=sumr + 128;
+            timage[j*width*3+i*3+1]=sumg + 128;
+            timage[j*width*3+i*3+2]=sumb + 128;
+        }
+        
+    }
+   
     //4. 더한 값에 clamping
-//}
+    
+    for (j=1;j<height-1; j++)  {
+        for (i=1;i<(width-1); i++) {
+            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
+            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
+            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
+        }
+    }
+}
 
 
 //void SaturationImage() {
@@ -400,7 +476,7 @@ void SaturationImage() {
 
 int main (int argc, char** argv)   {
 
-    int fileMenu, displayMenu, mainMenu;
+    int fileMenu, mainMenu, pixelOperation, imageFiltering;
 
     glutInit (&argc, argv);                 // Initialize GLUT.
     glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);     // Set display mode.
@@ -421,20 +497,32 @@ int main (int argc, char** argv)   {
     glutAddMenuEntry("test.bmp", 2);
     glutAddMenuEntry("test2.bmp", 3);
 
-    displayMenu = glutCreateMenu(displaySelect);
+//    displayMenu = glutCreateMenu(displaySelect);
+//    glutAddMenuEntry("Negative Image",10);
+//    glutAddMenuEntry("Grayscale Image",11);
+//    glutAddMenuEntry("Brightness Image",12);
+//    glutAddMenuEntry("Contrast Image",13);
+    
+    
+    pixelOperation = glutCreateMenu(displaySelect);
     glutAddMenuEntry("Negative Image",10);
     glutAddMenuEntry("Grayscale Image",11);
-    glutAddMenuEntry("Brightness Image",12);
-    glutAddMenuEntry("Contrast Image",13);
+    glutAddMenuEntry("Adjust Brightness",12);
+    glutAddMenuEntry("Contrast",13);
+    glutAddMenuEntry("Saturation", 15);
+
+    imageFiltering = glutCreateMenu(displaySelect);
     glutAddMenuEntry("Edge Detection",14);
-    glutAddMenuEntry("Saturation Image", 15);
-    
+
+    glutAddMenuEntry("Embossing Filter", 16);
     
     mainMenu = glutCreateMenu(mainSelect);
     glutAddSubMenu("1. Open File", fileMenu);
-    glutAddSubMenu("2. Choose Menu", displayMenu);
+    //glutAddSubMenu("2. Choose Menu", displayMenu);
+    glutAddSubMenu("2. Pixel Operation", pixelOperation);
+    glutAddSubMenu("3. Image Filterting", imageFiltering);
 
-    glutAddMenuEntry("3. Quit",666);
+    glutAddMenuEntry("5. Quit",666);
     glutSetMenu(mainMenu);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 

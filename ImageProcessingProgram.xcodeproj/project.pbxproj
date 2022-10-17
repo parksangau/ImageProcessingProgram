@@ -39,6 +39,7 @@
 		AE486AFB28FC2544003651E1 /* bmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bmp.c; sourceTree = "<group>"; };
 		AE486AFC28FC2544003651E1 /* imgp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = imgp.c; sourceTree = "<group>"; };
 		AE486B0028FC254B003651E1 /* test2.bmp */ = {isa = PBXFileReference; lastKnownFileType = image.bmp; path = test2.bmp; sourceTree = "<group>"; };
+		AE486B0128FC694C003651E1 /* sample.rgb */ = {isa = PBXFileReference; lastKnownFileType = file; path = sample.rgb; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +75,7 @@
 		AE486AEA28FC24D6003651E1 /* ImageProcessingProgram */ = {
 			isa = PBXGroup;
 			children = (
+				AE486B0128FC694C003651E1 /* sample.rgb */,
 				AE486AFB28FC2544003651E1 /* bmp.c */,
 				AE486AFC28FC2544003651E1 /* imgp.c */,
 				AE486AF828FC2544003651E1 /* sgi.c */,
