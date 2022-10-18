@@ -2,6 +2,8 @@
 #include <math.h>
 #include "sgi.h"
 
+#define MAX(x,y,z) (x > y ? x : y) > z ? (x > y ? x : y) : z
+#define MIN(x,y,z) (x < y ? x : y) < z ? (x < y ? x : y) : z
 
 GLsizei w,h;
 int width, height, depth;
@@ -21,7 +23,10 @@ void ContrastImage();
 void EdgeDetection();
 void SaturationImage();
 void Embossing();
-
+void RGBtoHSV(float r, float g, float b, float *h, float *s, float *v);
+void HSVtoRGB(float *r, float *g, float *b, float h, float s, float v);
+void Blurring();
+void Sharpenning();
 
 void init (void)  {
     glClearColor (1.0, 1.0, 1.0, 0.0);       // Set display-window color to white.
@@ -128,6 +133,15 @@ void displaySelect(int value)
             Embossing();
             display();
             break;
+        case 17:
+            Blurring();
+            display();
+            break;
+        case 18:
+            Sharpenning();
+            display();
+            break;
+       
     }
 }
 
@@ -156,8 +170,6 @@ void GrayscaleImage() {
             g = image[j * width * 3 + i + 1];
             b = image[j * width * 3 + i + 2];
             
-            // L = 0.30R + 0.59G + 0.11B or 0.2125R + 0.7154G + 0.0721B
-            // lumi = 0.2125 * r + 0.7154 * g + 0.0721 * b;
             lumi = 0.30 * r + 0.59 * g + 0.11 * b;
             
             image[j * width * 3 + i + 0] = lumi;
@@ -165,6 +177,7 @@ void GrayscaleImage() {
             image[j * width * 3 + i + 2] = lumi;
        }
    }
+
 }
 
 void BrightnessImage() {
@@ -240,110 +253,60 @@ void ContrastImage() {
 }
 
 void EdgeDetection() {
-    // Edge Detection Filter
+    
+    int filter[3][3]={{-1,-1,-1},{-1,8,-1},{-1,-1,-1}}; // image.pdf 38pg 참고
 
-            int filter[3][3]={{-1,-1,-1},{-1,8,-1},{-1,-1,-1}};
-
-            unsigned char *timage = (unsigned char *)malloc(width*height*3);
-            int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
-            int filter_sum=1;
-            for (j=1;j<height-1; j++)  {
-                    for (i=1;i<(width-1); i++) {
-                            sumr=0; sumb=0; sumg=0;
-
-                            for(k=0;k<3;k++){
-                                    for(l=0;l<3;l++){
-
-                                            pos= (j+l-1)*width*3+(i+k-1)*3;
-
-                                            r=image[pos+0];
-                                            g=image[pos+1];
-                                            b=image[pos+2];
-
-                                            sumr += r*filter[k][l];
-                                            sumg += g*filter[k][l];
-                                            sumb += b*filter[k][l];
-
-                                    }
-                            }
-
-                            sumr/=filter_sum;
-                            sumg/=filter_sum;
-                            sumb/=filter_sum;
-
-                            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
-                            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
-                            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
-                        
-                            timage[j*width*3+i*3+0]=sumr;
-                            timage[j*width*3+i*3+1]=sumg;
-                            timage[j*width*3+i*3+2]=sumb;
-                    }
-
+    unsigned char *timage = (unsigned char *)malloc(width*height*3);
+    int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
+    int filter_sum=1;
+    for (j=1;j<height-1; j++)  {    // height -1 해주는 이유 : 가장 자리를 구할 수 없기 때문에 & 시작은 1부터 (0 아님)
+        for (i=1;i<(width-1); i++) {    //weight - 1 위와 마찬가지.
+            
+            // 각각의 r, g, b 의 sum 을 해준다
+            sumr=0; sumb=0; sumg=0;
+            
+            for(k=0;k<3;k++){   //주변 픽셀을 꺼내오는 부분
+                for(l=0;l<3;l++){
+                    pos= (j+l-1)*width*3+(i+k-1)*3;
+                    
+                    r=image[pos+0];
+                    g=image[pos+1];
+                    b=image[pos+2];
+                    
+                    sumr += r*filter[k][l];
+                    sumg += g*filter[k][l];
+                    sumb += b*filter[k][l];
+                }
             }
-
-            for (j=1;j<height-1; j++)  {
-                    for (i=1;i<(width-1); i++) {
-                            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
-                            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
-                            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
-                    }
-            }
-
+            
+            // 갯수로 나눠주면 평균값 구할 수 있음
+            sumr/=filter_sum;
+            sumg/=filter_sum;
+            sumb/=filter_sum;
+            
+            //clamping
+            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
+            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
+            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
+            
+            
+            // timage 가 해주는 역할 : 원본을 바꾸면 화질이 깨져서 원본은 그대로 두고 바꾼 픽셀 값을 timage 에 따로 저장함
+            timage[j*width*3+i*3+0]=sumr;
+            timage[j*width*3+i*3+1]=sumg;
+            timage[j*width*3+i*3+2]=sumb;
+        }
+    }
+    
+    // timage 로 구한 이미지를 실제 원본에 덮어쓰는 과정 -> 화면상에 display
+    for (j=1;j<height-1; j++)  {
+        for (i=1;i<(width-1); i++) {
+            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
+            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
+            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
+        }
+    }
 
 }
-
-//void EdgeDetection() {  // 필터링
-//    int filter[3][3]={{-1,-1,-1},{-1,8,-1},{-1,-1,-1}}; // image.pdf 38pg 참고
-//    unsigned char *timage = (unsigned char *)malloc(width*height*3);
-//    int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
-//    int filter_sum=1;
-//    for (j=1;j<height-1; j++)  {  // height -1 해주는 이유 : 가장 자리를 구할 수 없기 때문에 & 시작은 1부터 (0 아님)
-//        for (i=1;i<(width-1); i++) {    //weight - 1 위와 마찬가지.
-//            // 각각의 r, g, b 의 sum 을 해준다
-//            sumr=0; sumb=0; sumg=0;
-//            for(k=0;k<3;k++){   //주변 픽셀을 꺼내오는 부분
-//                for(l=0;l<3;l++){   //주변 픽셀을 꺼내오는 부분 (0~3)
-//                    pos= (j+l-1)*width*3+(i+k-1)*3;
-//
-//                    r=image[pos+0];
-//                    g=image[pos+1];
-//                    b=image[pos+2];
-//
-//                    sumr += r*filter[k][l];
-//                    sumg += g*filter[k][l];
-//                    sumb += b*filter[k][l];
-//                }
-//            }
-//
-//            // 갯수로 나눠주면 평균값 구할 수 있음
-//            sumr /= filter_sum;
-//            sumg /= filter_sum;
-//            sumb /= filter_sum;
-//
-//            //clamping
-//            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
-//            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
-//            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
-//
-//
-//            // timage 가 해주는 역할 : 원본을 바꾸면 화질이 깨져서 원본은 그대로 두고 바꾼 픽셀 값을 timage 에 따로 저장함
-//            timage[j*width*3+i*3+0]=sumr;
-//            timage[j*width*3+i*3+1]=sumg;
-//            timage[j*width*3+i*3+2]=sumb;
-//        }
-//    }
-//
-//    // timage 로 구한 이미지를 실제 원본에 덮어쓰는 과정 -> 화면상에 display
-//    for (j=1;j<height-1; j++)  {
-//        for (i=1;i<(width-1); i++) {
-//            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
-//            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
-//            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
-//        }
-//    }
-//}
-
 
 
 void Embossing() {
@@ -353,27 +316,10 @@ void Embossing() {
     int filter_sum=1;
     
     //1. 그레이 필터로 바꾸기
-    float lumi;
-    for (j = 0; j < height; j++)  {
-        for (i = 0; i < width * 3; i = i + 3) {
-            r = image[j * width * 3 + i + 0];
-            g = image[j * width * 3 + i + 1];
-            b = image[j * width * 3 + i + 2];
-            
-            // L = 0.30R + 0.59G + 0.11B or 0.2125R + 0.7154G + 0.0721B
-            // lumi = 0.2125 * r + 0.7154 * g + 0.0721 * b;
-            lumi = 0.30 * r + 0.59 * g + 0.11 * b;
-            
-            image[j * width * 3 + i + 0] = lumi + 128;
-            image[j * width * 3 + i + 1] = lumi + 128;
-            image[j * width * 3 + i + 2] = lumi + 128;
-       }
-   }
-    
+    GrayscaleImage();
     
     //2. filtering
     int filter[3][3]={{2,0,0},{0,-1,0},{0,0,-1}};
-    
     
     for (j=1;j<height-1; j++)  {
         for (i=1;i<(width-1); i++) {
@@ -413,7 +359,6 @@ void Embossing() {
     }
    
     //4. 더한 값에 clamping
-    
     for (j=1;j<height-1; j++)  {
         for (i=1;i<(width-1); i++) {
             image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
@@ -423,55 +368,234 @@ void Embossing() {
     }
 }
 
-
-//void SaturationImage() {
-//
-//    int i, j;
-//    float r, g, b;
-//    float ro, go, bo;
-//    float scale = 0.5;
-//    float Lumi = 0;
-//
-//    // step1 : Color Convert RGB -> HSV
-//
-//
-//
-//    // step2 : Scale from S for each pixel component
-//    // S = S * scale;
-//
-//
-//    // step3 : Color Convert HSV -> RGB
-//
-//
-//    // clamping
-//
-//}
-
 void SaturationImage() {
-//   int i, j;
-//   float r, g, b, h, s, v;
-//   float scale = 0.5;
-//
-//   for (j = 0; j < height; j++) {
-//      for (i = 0; i < width * 3; i = i + 3) {
-//         r = image[j * width * 3 + i + 0];
-//         g = image[j * width * 3 + i + 1];
-//         b = image[j * width * 3 + i + 2];
-//         r = r / 255.0; g = g / 255.0; b = b / 255.0;
-//
-//        RGBtoHSV(r, g, b, &h, &s, &v);
-//        s *= scale;
-//        HSVtoRGB(&r, &g, &b, h, s, v);
-//        r = r * 255.0; g = g * 255.0; b = b * 255.0;
-//
-//        if (r > 255) r = 255; if (r < 0) r = 0;
-//        if (g > 255) g = 255; if (g < 0) g = 0;
-//        if (b > 255) b = 255; if (b < 0) b = 0;
-//        image[j * width * 3 + i + 0] = r;
-//        image[j * width * 3 + i + 1] = g;
-//        image[j * width * 3 + i + 2] = b;
-//      }
-//   }
+    int i, j;
+    float r, g, b, h, s, v;
+    float scale = 0.5;
+
+    for (j = 0; j < height; j++) {
+        for (i = 0; i < width * 3; i = i + 3) {
+            r = image[j * width * 3 + i + 0];
+            g = image[j * width * 3 + i + 1];
+            b = image[j * width * 3 + i + 2];
+            r = r / 255.0; g = g / 255.0; b = b / 255.0;
+            
+            // step1 : Color Convert RGB -> HSV
+            RGBtoHSV(r, g, b, &h, &s, &v);
+            
+            // step2 : Scale from S for each pixel component
+            s *= scale;
+            
+            // step3 : Color Convert HSV -> RGB
+            HSVtoRGB(&r, &g, &b, h, s, v);
+            r = r * 255.0; g = g * 255.0; b = b * 255.0;
+            
+            // clamping
+            if (r > 255) r = 255; if (r < 0) r = 0;
+            if (g > 255) g = 255; if (g < 0) g = 0;
+            if (b > 255) b = 255; if (b < 0) b = 0;
+            
+            image[j * width * 3 + i + 0] = r;
+            image[j * width * 3 + i + 1] = g;
+            image[j * width * 3 + i + 2] = b;
+        }
+    }
+    
+}
+
+void RGBtoHSV(float r, float g, float b, float *h, float *s, float *v) {
+    float min, max, delta;
+    
+    min = MIN(r, g, b);
+    max = MAX(r, g, b);
+    
+    *v = max;   //v
+    
+    delta = max - min;
+    
+    if(max != 0)
+        *s = delta / max;   //s
+    else {
+        // r = g = b = 0    //s = 0, v is undefined
+        *s = 0;
+        *h = -1;
+        return;
+    }
+    
+    if(r == max)
+        *h = (g - b) / delta;   //between yellow & magenta
+    else if(g == max)
+        *h = 2 + (b - r) / delta;   //between cyan & yellow
+    else
+        *h = 4 + (r - g) / delta;   //between magenta & cyan
+    
+    *h *= 60; 
+    if (*h < 0)
+        *h += 360;
+}
+
+void HSVtoRGB(float *r, float *g, float *b, float h, float s, float v) {
+    
+    int i;
+    float f, p, q, t;
+    
+    if (s == 0) {
+        //achromatic (grey)
+        *r = *g = *b = v;
+        return;
+    }
+    
+    h /= 60;
+    i = float(h);
+    f = h - i;
+    p = v * (1 - s);
+    q = v * (1 - s * f);
+    t = v * (1 - s * (1 - f));
+    
+    switch (i) {
+        case 0:
+            *r = v;
+            *g = t;
+            *b = p;
+            break;
+        case 1:
+            *r = q;
+            *g = v;
+            *b = p;
+            break;
+        case 2:
+            *r = p;
+            *g = v;
+            *b = t;
+            break;
+        case 3:
+            *r = p;
+            *g = q;
+            *b = v;
+            break;
+        case 4:
+            *r = t;
+            *g = p;
+            *b = v;
+            break;
+        default:    // == case 5:
+            *r = v;
+            *g = p;
+            *b = q;
+            break;
+    }
+}
+
+void Blurring() {
+    
+    float filter[3][3]={{0.0625,0.125,0.0625},{0.125,0.25,0.125},{0.0625,0.125,0.0625}}; // blurring filter
+
+    unsigned char *timage = (unsigned char *)malloc(width*height*3);
+    int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
+    int filter_sum=1;
+    for (j=1;j<height-1; j++)  {    // height -1 해주는 이유 : 가장 자리를 구할 수 없기 때문에 & 시작은 1부터 (0 아님)
+        for (i=1;i<(width-1); i++) {    //weight - 1 위와 마찬가지.
+            
+            // 각각의 r, g, b 의 sum 을 해준다
+            sumr=0; sumb=0; sumg=0;
+            
+            for(k=0;k<3;k++){   //주변 픽셀을 꺼내오는 부분
+                for(l=0;l<3;l++){
+                    pos= (j+l-1)*width*3+(i+k-1)*3;
+                    
+                    r=image[pos+0];
+                    g=image[pos+1];
+                    b=image[pos+2];
+                    
+                    sumr += r*filter[k][l];
+                    sumg += g*filter[k][l];
+                    sumb += b*filter[k][l];
+                }
+            }
+            
+            // 갯수로 나눠주면 평균값 구할 수 있음
+            sumr/=filter_sum;
+            sumg/=filter_sum;
+            sumb/=filter_sum;
+            
+            //clamping
+            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
+            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
+            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
+            
+            
+            // timage 가 해주는 역할 : 원본을 바꾸면 화질이 깨져서 원본은 그대로 두고 바꾼 픽셀 값을 timage 에 따로 저장함
+            timage[j*width*3+i*3+0]=sumr;
+            timage[j*width*3+i*3+1]=sumg;
+            timage[j*width*3+i*3+2]=sumb;
+        }
+    }
+    
+    // timage 로 구한 이미지를 실제 원본에 덮어쓰는 과정 -> 화면상에 display
+    for (j=1;j<height-1; j++)  {
+        for (i=1;i<(width-1); i++) {
+            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
+            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
+            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
+        }
+    }
+
+}
+
+void Sharpenning() {
+
+    int filter[3][3]={{0,-1,0},{-1,5,-1},{0,-1,0}}; //
+
+    unsigned char *timage = (unsigned char *)malloc(width*height*3);
+    int r,g,b, sumr,sumg,sumb, i,j,k,l,pos;
+    int filter_sum=1;
+    for (j=1;j<height-1; j++)  {    // height -1 해주는 이유 : 가장 자리를 구할 수 없기 때문에 & 시작은 1부터 (0 아님)
+        for (i=1;i<(width-1); i++) {    //weight - 1 위와 마찬가지.
+            
+            // 각각의 r, g, b 의 sum 을 해준다
+            sumr=0; sumb=0; sumg=0;
+            
+            for(k=0;k<3;k++){   //주변 픽셀을 꺼내오는 부분
+                for(l=0;l<3;l++){
+                    pos= (j+l-1)*width*3+(i+k-1)*3;
+                    
+                    r=image[pos+0];
+                    g=image[pos+1];
+                    b=image[pos+2];
+                    
+                    sumr += r*filter[k][l];
+                    sumg += g*filter[k][l];
+                    sumb += b*filter[k][l];
+                }
+            }
+            
+            // 갯수로 나눠주면 평균값 구할 수 있음
+            sumr/=filter_sum;
+            sumg/=filter_sum;
+            sumb/=filter_sum;
+            
+            //clamping
+            if ( sumr > 255) sumr=255; if ( sumr < 0.0) sumr=0.0;
+            if ( sumg > 255) sumg=255; if ( sumg < 0.0) sumg=0.0;
+            if ( sumb > 255) sumb=255; if ( sumb < 0.0) sumb=0.0;
+            
+            
+            // timage 가 해주는 역할 : 원본을 바꾸면 화질이 깨져서 원본은 그대로 두고 바꾼 픽셀 값을 timage 에 따로 저장함
+            timage[j*width*3+i*3+0]=sumr;
+            timage[j*width*3+i*3+1]=sumg;
+            timage[j*width*3+i*3+2]=sumb;
+        }
+    }
+    
+    // timage 로 구한 이미지를 실제 원본에 덮어쓰는 과정 -> 화면상에 display
+    for (j=1;j<height-1; j++)  {
+        for (i=1;i<(width-1); i++) {
+            image[j*width*3+i*3+0]=timage[j*width*3+i*3+0];
+            image[j*width*3+i*3+1]=timage[j*width*3+i*3+1];
+            image[j*width*3+i*3+2]=timage[j*width*3+i*3+2];
+        }
+    }
+
 }
 
 int main (int argc, char** argv)   {
@@ -496,33 +620,28 @@ int main (int argc, char** argv)   {
     glutAddMenuEntry("train.bmp",1);
     glutAddMenuEntry("test.bmp", 2);
     glutAddMenuEntry("test2.bmp", 3);
-
-//    displayMenu = glutCreateMenu(displaySelect);
-//    glutAddMenuEntry("Negative Image",10);
-//    glutAddMenuEntry("Grayscale Image",11);
-//    glutAddMenuEntry("Brightness Image",12);
-//    glutAddMenuEntry("Contrast Image",13);
     
     
     pixelOperation = glutCreateMenu(displaySelect);
-    glutAddMenuEntry("Negative Image",10);
     glutAddMenuEntry("Grayscale Image",11);
+    glutAddMenuEntry("Negative Image",10);
     glutAddMenuEntry("Adjust Brightness",12);
     glutAddMenuEntry("Contrast",13);
     glutAddMenuEntry("Saturation", 15);
 
     imageFiltering = glutCreateMenu(displaySelect);
+    glutAddMenuEntry("Blurring",17);
     glutAddMenuEntry("Edge Detection",14);
+    glutAddMenuEntry("Sharpening", 18);
+    glutAddMenuEntry("Embossing", 16);
+    
 
-    glutAddMenuEntry("Embossing Filter", 16);
     
     mainMenu = glutCreateMenu(mainSelect);
     glutAddSubMenu("1. Open File", fileMenu);
-    //glutAddSubMenu("2. Choose Menu", displayMenu);
     glutAddSubMenu("2. Pixel Operation", pixelOperation);
-    glutAddSubMenu("3. Image Filterting", imageFiltering);
-
-    glutAddMenuEntry("5. Quit",666);
+    glutAddSubMenu("3. Image Filtering", imageFiltering);
+    glutAddMenuEntry("4. Quit",666);
     glutSetMenu(mainMenu);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 
